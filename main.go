@@ -44,9 +44,9 @@ func generateToken(clientID, clientSecret string) (string, error) {
 		Token string `json:"access_token"`
 	}
 
-	var tokenResponse *responseData
+	var tokenResponse responseData
 
-	err = json.NewDecoder(resp.Body).Decode(tokenResponse)
+	err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 	if err != nil {
 		return "", err
 	}
