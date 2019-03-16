@@ -101,6 +101,38 @@ func uploadVideo(link, token string) (string, error) {
 	return data.Gfyname, nil
 }
 
+func checkStatus(gfyname, token string) (string, error) {
+	client := &http.Client{}
+
+	request, err := http.NewRequest("GET", fmt.Sprintf("https://api.gfycat.com/v1/gfycats/fetch/status/%s", gfyname), nil)
+	if err != nil {
+		return "", err
+	}
+
+	//request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	type responseData struct {
+		Task string `json:"task"`
+	}
+
+	var data responseData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	return data.Task, nil
+}
+
 func main() {
 	videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
 	clientID := "2_OUazaV"
@@ -119,4 +151,11 @@ func main() {
 	}
 
 	fmt.Println(gfyname)
+
+	status, err := checkStatus(gfyname, token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(status)
 }
