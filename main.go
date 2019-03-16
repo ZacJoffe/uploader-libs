@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func generateToken(clientID, clientSecret string) (string, error) {
@@ -112,25 +113,40 @@ func checkStatus(gfyname, token string) (string, error) {
 	//request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
 
-	resp, err := client.Do(request)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
 	type responseData struct {
 		Task string `json:"task"`
+		Url  string `json:"webmUrl"`
 	}
-
 	var data responseData
 
-	err = json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		return "", err
+	status := "encoding"
+
+	for status == "encoding" {
+		resp, err := client.Do(request)
+		if err != nil {
+			return "", err
+		}
+
+		defer resp.Body.Close()
+
+		err = json.NewDecoder(resp.Body).Decode(&data)
+		if err != nil {
+			return "", err
+		}
+
+		switch data.Task {
+		case "encoding":
+			fmt.Println("Encoding...")
+			time.Sleep(3 * time.Second)
+		case "NotFoundo":
+			err = fmt.Errorf("Gif: %s not found!", gfyname)
+			return "", err
+		default:
+			status = "Done!"
+		}
 	}
 
-	return data.Task, nil
+	return data.Url, nil
 }
 
 func main() {
@@ -152,10 +168,10 @@ func main() {
 
 	fmt.Println(gfyname)
 
-	status, err := checkStatus(gfyname, token)
+	url, err := checkStatus(gfyname, token)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(status)
+	fmt.Println(url)
 }
