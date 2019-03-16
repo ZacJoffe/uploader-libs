@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -54,7 +55,54 @@ func generateToken(clientID, clientSecret string) (string, error) {
 	return tokenResponse.Token, nil
 }
 
+func uploadVideo(link, token string) (string, error) {
+	payload := struct {
+		Url   string `json:"fetchUrl"`
+		Title string `json:"title"`
+	}{
+		Url:   link,
+		Title: "test",
+	}
+
+	body := new(bytes.Buffer)
+	err := json.NewEncoder(body).Encode(&payload)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+
+	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", body)
+	if err != nil {
+		return "", err
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	type responseData struct {
+		Gfyname string `json:"gfyname"`
+	}
+
+	var data responseData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	return data.Gfyname, nil
+}
+
 func main() {
+	videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
 	clientID := "2_OUazaV"
 	clientSecret := "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM"
 
@@ -63,5 +111,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(token)
+	fmt.Println(token)
+
+	gfyname, err := uploadVideo(videoLink, token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(gfyname)
 }
