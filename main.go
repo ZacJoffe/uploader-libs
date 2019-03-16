@@ -120,6 +120,7 @@ func checkStatus(gfyname, token string) (string, error) {
 	var data responseData
 
 	status := "encoding"
+	count := 1
 
 	for status == "encoding" {
 		resp, err := client.Do(request)
@@ -136,12 +137,27 @@ func checkStatus(gfyname, token string) (string, error) {
 
 		switch data.Task {
 		case "encoding":
-			fmt.Println("Encoding...")
-			time.Sleep(3 * time.Second)
+			// if waited 30 seconds, throw an error
+			if count == 30 {
+				// new line
+				fmt.Printf("\n")
+				return "", fmt.Errorf("Gfycat could not be created!")
+			}
+
+			fmt.Printf("\rEncoding")
+			for i := 1; i <= count; i++ {
+				fmt.Printf(".")
+			}
+			count++
+			//fmt.Printf("\rEncoding...")
+			time.Sleep(1 * time.Second)
 		case "NotFoundo":
-			err = fmt.Errorf("Gif: %s not found!", gfyname)
-			return "", err
+			//err = fmt.Errorf("Gif: %s not found!", gfyname)
+			return "", fmt.Errorf("Gif: %s not found!", gfyname)
 		default:
+			if count > 1 {
+				fmt.Printf("\n")
+			}
 			status = "Done!"
 		}
 	}
