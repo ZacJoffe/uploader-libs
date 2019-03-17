@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -70,7 +74,7 @@ func UploadVideo(link, token string) (string, error) {
 		Title string `json:"title"`
 	}{
 		Url:   link,
-		Title: "test",
+		Title: "test", // remove later
 	}
 
 	// encode payload
@@ -115,6 +119,118 @@ func UploadVideo(link, token string) (string, error) {
 	fmt.Println(data.Gfyname)
 
 	// call GetGyfcatLink to check status of new upload and get the link when it's finished
+	url, err := GetGyfcatLink(data.Gfyname, token)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
+}
+
+func CopyFile(src, dst string) error {
+	original, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	defer original.Close()
+
+	copy, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	defer copy.Close()
+
+	_, err = io.Copy(copy, original)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UploadFile(fileName, token string) (string, error) {
+	client := &http.Client{}
+
+	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", nil)
+	if err != nil {
+		return "", err
+	}
+
+	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	type responseData struct {
+		Gfyname string `json:"gfyname"`
+	}
+
+	var data responseData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(data.Gfyname)
+
+	err = CopyFile("video.mkv", fmt.Sprintf("/tmp/%s", data.Gfyname))
+	if err != nil {
+		return "", err
+	}
+
+	file, err := os.Open(fmt.Sprintf("/tmp/%s", data.Gfyname))
+	if err != nil {
+		return "", err
+	}
+
+	//defer file.Close()
+	fileContents, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return "", err
+	}
+
+	file.Close()
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", fileInfo.Name())
+	if err != nil {
+		return "", err
+	}
+
+	part.Write(fileContents)
+
+	err = writer.Close()
+	if err != nil {
+		return "", err
+	}
+
+	request, err = http.NewRequest("POST", "https://filedrop.gfycat.com", body)
+	if err != nil {
+		return "", nil
+	}
+
+	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
+
+	resp, err = client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
 	url, err := GetGyfcatLink(data.Gfyname, token)
 	if err != nil {
 		return "", err
@@ -209,7 +325,7 @@ func main() {
 			- if parameter is not given, promt for import instead of throwing error
 			- put link in clipboard
 	*/
-	videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
+	//videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
 	clientID := "2_OUazaV"
 	clientSecret := "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM"
 
@@ -220,12 +336,21 @@ func main() {
 
 	fmt.Println(token)
 
-	url, err := UploadVideo(videoLink, token)
+	url, err := UploadFile("video.mkv", token)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(url)
+
+	/*
+		url, err := UploadVideo(videoLink, token)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(url)
+	*/
 
 	/*
 		url, err := checkStatus(gfyname, token)
