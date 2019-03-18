@@ -72,9 +72,11 @@ func UploadVideo(link, token string) (string, error) {
 	payload := struct {
 		Url   string `json:"fetchUrl"`
 		Title string `json:"title"`
+		Audio bool   `json:"keepAudio"`
 	}{
 		Url:   link,
 		Title: "test", // remove later
+		Audio: true,
 	}
 
 	// encode payload
@@ -325,7 +327,7 @@ func main() {
 			- if parameter is not given, promt for import instead of throwing error
 			- put link in clipboard
 	*/
-	//videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
+	videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
 	clientID := "2_OUazaV"
 	clientSecret := "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM"
 
@@ -336,21 +338,21 @@ func main() {
 
 	fmt.Println(token)
 
-	url, err := UploadFile("video.mkv", token)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(url)
-
 	/*
-		url, err := UploadVideo(videoLink, token)
+		url, err := UploadFile("video.mkv", token)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		fmt.Println(url)
 	*/
+
+	url, err := UploadVideo(videoLink, token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(url)
 
 	/*
 		url, err := checkStatus(gfyname, token)
