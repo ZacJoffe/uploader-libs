@@ -67,7 +67,7 @@ func GenerateToken(clientID, clientSecret string) (string, error) {
 }
 
 // UploadVideo uploads a given youtube video, returns link gfycat link
-func UploadVideo(link, token string) (string, error) {
+func UploadVideo(link, token string, audio bool) (string, error) {
 	// create anonymous payload struct for REST call to gfycat create endpoint
 	payload := struct {
 		Url   string `json:"fetchUrl"`
@@ -76,7 +76,7 @@ func UploadVideo(link, token string) (string, error) {
 	}{
 		Url:   link,
 		Title: "test", // remove later
-		Audio: true,
+		Audio: audio,
 	}
 
 	// encode payload
@@ -121,7 +121,7 @@ func UploadVideo(link, token string) (string, error) {
 	fmt.Println(data.Gfyname)
 
 	// call GetGyfcatLink to check status of new upload and get the link when it's finished
-	url, err := GetGyfcatLink(data.Gfyname, token)
+	url, err := GetGyfcatLink(data.Gfyname, token, audio)
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +152,7 @@ func CopyFile(src, dst string) error {
 	return nil
 }
 
-func UploadFile(fileName, token string) (string, error) {
+func UploadFile(fileName, token string, audio bool) (string, error) {
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", nil)
@@ -233,7 +233,7 @@ func UploadFile(fileName, token string) (string, error) {
 
 	defer resp.Body.Close()
 
-	url, err := GetGyfcatLink(data.Gfyname, token)
+	url, err := GetGyfcatLink(data.Gfyname, token, audio)
 	if err != nil {
 		return "", err
 	}
@@ -242,7 +242,7 @@ func UploadFile(fileName, token string) (string, error) {
 }
 
 // GetGyfcatLink checks the status of an upload, and returns the url of the webm when encoding is finished
-func GetGyfcatLink(gfyname, token string) (string, error) {
+func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
 	// create HTTP client and GET request to status endpoint
 	client := &http.Client{}
 
@@ -256,8 +256,9 @@ func GetGyfcatLink(gfyname, token string) (string, error) {
 
 	// create new struct for responce payload, and a new instance of it
 	type responseData struct {
-		Task string `json:"task"`
-		Url  string `json:"webmUrl"` // note that this gets the webmUrl, others are available in the response payload
+		Task    string `json:"task"`
+		Url     string `json:"webmUrl"` // note that this gets the webmUrl, others are available in the response payload
+		Gfyname string `json:"gfyname"` // used for if gfy has audio
 	}
 
 	// the Url field will not be populated during the initial calls when the gfy is encoding, and the task field will not be populated after encoding has finished
@@ -314,17 +315,21 @@ func GetGyfcatLink(gfyname, token string) (string, error) {
 		}
 	}
 
+	if audio {
+		return fmt.Sprintf("https://gfycat.com/%s", data.Gfyname), nil
+	}
+
 	return data.Url, nil
 }
 
 func main() {
 	/*
 		TODO:
+			- fix file upload (with sound)
 			- fix ... message
-			- add sound
 			- add optional time selection
 			- add videolink as argument parameter
-			- if parameter is not given, promt for import instead of throwing error
+			- if parameter is not given, prompt for import instead of throwing error
 			- put link in clipboard
 	*/
 	videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
@@ -339,7 +344,7 @@ func main() {
 	fmt.Println(token)
 
 	/*
-		url, err := UploadFile("video.mkv", token)
+		url, err := UploadFile("video.mkv", token, false)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -347,7 +352,7 @@ func main() {
 		fmt.Println(url)
 	*/
 
-	url, err := UploadVideo(videoLink, token)
+	url, err := UploadVideo(videoLink, token, true)
 	if err != nil {
 		log.Fatal(err)
 	}
