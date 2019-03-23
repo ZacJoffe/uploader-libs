@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+/*
+	TODO:
+		- fix file upload (with sound)
+		- fix ... message
+		- add optional time selection
+		- add videolink as argument parameter
+		- if parameter is not given, prompt for import instead of throwing error
+		- put link in clipboard
+*/
+
 // Generatetoken generates an OAUTH bearer token for given client ID and secret. The token is used for all future REST calls
 func GenerateToken(clientID, clientSecret string) (string, error) {
 	// create anonymous struct to encode as the payload for the REST call
