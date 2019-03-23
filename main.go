@@ -1,8 +1,8 @@
 package main
 
 import (
+	"./packages"
 	"fmt"
-	"github.com/ZacJoffe/gif-uploader/packages"
 	"log"
 )
 
