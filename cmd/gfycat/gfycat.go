@@ -140,7 +140,7 @@ func UploadVideo(link, token string, audio bool) (string, error) {
 	return url, nil
 }
 
-func CopyFile(src, dst string) error {
+func copyFile(src, dst string) error {
 	original, err := os.Open(src)
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 	fmt.Println(data.Gfyname)
 
 	/*
-		err = CopyFile("video.mkv", fmt.Sprintf("/tmp/%s", data.Gfyname))
+		err = copyFile("video.mkv", fmt.Sprintf("/tmp/%s", data.Gfyname))
 		if err != nil {
 			return "", err
 		}
@@ -206,13 +206,13 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 	*/
 
 	/*
-		err = CopyFile("video.mkv", data.Gfyname)
+		err = copyFile("video.mkv", data.Gfyname)
 		if err != nil {
 			return "", err
 		}
 	*/
 
-	file, err := os.Open("video.mkv")
+	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}

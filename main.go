@@ -1,7 +1,10 @@
 package main
 
 import (
-	"./packages"
+	//"./gfycat"
+	//"./imgur"
+	//"./cmd/gfycat"
+	"./cmd/imgur"
 	"fmt"
 	"log"
 )
@@ -16,30 +19,48 @@ func main() {
 			- if parameter is not given, prompt for import instead of throwing error
 			- put link in clipboard
 	*/
-	//videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
-	clientID := "2_OUazaV"
-	clientSecret := "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM"
-
-	token, err := gfycat.GenerateToken(clientID, clientSecret)
-	if err != nil {
-		log.Fatal(err)
+	//videoLink := "https://www.youtube.com/watch?v=pf5xjw13mqw"
+	type GfycatClient struct {
+		ID     string
+		Secret string
 	}
 
-	fmt.Println(token)
-
-	url, err := gfycat.UploadFile("video.mkv", token, false)
-	if err != nil {
-		log.Fatal(err)
+	type ImgurClient struct {
+		ID     string
+		Secret string
 	}
-
-	fmt.Println(url)
 
 	/*
-		url, err := UploadVideo(videoLink, token, true)
+		gfyClient := GfycatClient{
+			ID:     "2_OUazaV",
+			Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
+		}
+
+		token, err := gfycat.GenerateToken(gfyClient.ID, gfyClient.Secret)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(token)
+
+		url, err := gfycat.UploadFile("video.mkv", token, false)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		fmt.Println(url)
+
 	*/
+
+	imgurClient := ImgurClient{
+		ID:     "0d297558de98a48",
+		Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
+	}
+
+	url, err := imgur.UploadFile("photo.jpg", imgurClient.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(url)
 }
