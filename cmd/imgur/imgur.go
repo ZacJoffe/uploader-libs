@@ -11,8 +11,24 @@ import (
 	"path/filepath"
 )
 
-func UploadFile(fileName, clientID string) (string, error) {
-	// hardcoded, fix later
+func UploadVideo(fileName, clientID string) (string, error) {
+	link, err := uploadFile(fileName, "video", clientID)
+	if err != nil {
+		return "", err
+	}
+
+	if link[len(link)-1] == '.' {
+		return link[:len(link)-1], nil
+	}
+
+	return link, nil
+}
+
+func UploadImage(fileName, clientID string) (string, error) {
+	return uploadFile(fileName, "image", clientID)
+}
+
+func uploadFile(fileName, fileType, clientID string) (string, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
@@ -21,7 +37,7 @@ func UploadFile(fileName, clientID string) (string, error) {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("image", filepath.Base(file.Name()))
+	part, err := writer.CreateFormFile(fileType, filepath.Base(file.Name()))
 	if err != nil {
 		return "", err
 	}
