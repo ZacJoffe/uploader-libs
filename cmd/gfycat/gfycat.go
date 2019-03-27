@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	//"io/ioutil"
-	"log"
+	//"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -16,6 +16,7 @@ import (
 
 /*
 	TODO:
+		- refactor getting gfycat to its own function
 		- fix file upload (with sound)
 		- fix ... message
 		- add optional time selection
@@ -193,72 +194,31 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	fmt.Println(data.Gfyname)
 
-	/*
-		err = copyFile("video.mkv", fmt.Sprintf("/tmp/%s", data.Gfyname))
-		if err != nil {
-			return "", err
-		}
-
-		file, err := os.Open(fmt.Sprintf("/tmp/%s", data.Gfyname))
-		if err != nil {
-			return "", err
-		}
-	*/
-
-	/*
-		err = copyFile("video.mkv", data.Gfyname)
-		if err != nil {
-			return "", err
-		}
-	*/
-
 	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
-	/*
-		fileContents, err := ioutil.ReadAll(file)
-		if err != nil {
-			return "", err
-		}
-
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return "", err
-		}
-
-		file.Close()
-
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", fileInfo.Name())
-		if err != nil {
-			return "", err
-		}
-
-		part.Write(fileContents)
-
-		err = writer.Close()
-		if err != nil {
-			return "", err
-		}
-	*/
-
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
-	if err != nil {
-		return "", err
-	}
-
-	io.Copy(part, file)
 
 	err = writer.WriteField("key", data.Gfyname)
 	if err != nil {
 		return "", err
 	}
+
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return "", err
+	}
+
+	/*
+		key, err := writer.CreateFormField("key")
+		key.Write([]byte(data.Gfyname))
+	*/
+
+	io.Copy(part, file)
 
 	err = writer.Close()
 	if err != nil {
@@ -272,7 +232,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	//request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
 	//request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Add("Content-Type", "multipart/form-data")
+	request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	resp, err = client.Do(request)
 	if err != nil {
@@ -280,6 +240,12 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 	}
 
 	defer resp.Body.Close()
+
+	/*
+		respRaw, _ := ioutil.ReadAll(resp.Body)
+		bodyString := string(respRaw)
+		log.Println(bodyString)
+	*/
 
 	url, err := GetGyfcatLink(data.Gfyname, token, audio)
 	if err != nil {
@@ -369,42 +335,4 @@ func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
 	}
 
 	return data.Url, nil
-}
-
-func main() {
-	/*
-		TODO:
-			- fix file upload (with sound)
-			- fix ... message
-			- add optional time selection
-			- add videolink as argument parameter
-			- if parameter is not given, prompt for import instead of throwing error
-			- put link in clipboard
-	*/
-	//videoLink := "https://www.youtube.com/watch?v=Pf5xjW13MQw"
-	clientID := "2_OUazaV"
-	clientSecret := "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM"
-
-	token, err := GenerateToken(clientID, clientSecret)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(token)
-
-	url, err := UploadFile("video.mkv", token, false)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(url)
-
-	/*
-		url, err := UploadVideo(videoLink, token, true)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println(url)
-	*/
 }
