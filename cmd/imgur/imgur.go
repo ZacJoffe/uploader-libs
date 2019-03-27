@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 )
 
 func UploadVideo(fileName, clientID string) (string, error) {
@@ -37,7 +36,8 @@ func uploadFile(fileName, fileType, clientID string) (string, error) {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(fileType, filepath.Base(file.Name()))
+	//part, err := writer.CreateFormFile(fileType, filepath.Base(file.Name()))
+	part, err := writer.CreateFormFile(fileType, fileName)
 	if err != nil {
 		return "", err
 	}

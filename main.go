@@ -4,7 +4,7 @@ import (
 	//"./gfycat"
 	//"./imgur"
 	//"./cmd/gfycat"
-	//"./cmd/imgur"
+	"./cmd/imgur"
 	"fmt"
 	"log"
 
@@ -40,49 +40,45 @@ func main() {
 		Secret string
 	}
 
-	gfyClient := GfycatClient{
-		ID:     "2_OUazaV",
-		Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
+	/*
+		gfyClient := GfycatClient{
+			ID:     "2_OUazaV",
+			Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
+		}
+
+		token, err := GenerateToken(gfyClient.ID, gfyClient.Secret)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(token)
+
+		url, err := UploadFile("video.mkv", token, false)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(url)
+	*/
+
+	imgurClient := ImgurClient{
+		ID:     "0d297558de98a48",
+		Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
 	}
 
-	token, err := GenerateToken(gfyClient.ID, gfyClient.Secret)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(token)
-
-	url, err := UploadFile("video.mkv", token, false)
+	url, err := imgur.UploadVideo("video.mkv", imgurClient.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(url)
 
-	/*
-		imgurClient := ImgurClient{
-			ID:     "0d297558de98a48",
-			Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
-		}
+	link, err := imgur.UploadImage("photo.jpg", imgurClient.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		url, err := UploadFile("video.mkv", imgurClient.ID)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if url[len(url)-1] == '.' {
-			url = url[:len(url)-1]
-		}
-
-		fmt.Println(url)
-
-		link, err := imgur.UploadImage("photo.jpg", imgurClient.ID)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println(link)
-	*/
+	fmt.Println(link)
 
 }
 
