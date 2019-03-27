@@ -15,9 +15,10 @@ import (
 
 /*
 	TODO:
-		- refactor getting gfycat to its own function
-		- fix file upload (with sound)
+		- file upload sound
+		- refactor generate token to be private to package (???)
 		- fix ... message
+
 		- add optional time selection
 		- add videolink as argument parameter
 		- if parameter is not given, prompt for import instead of throwing error
@@ -140,6 +141,7 @@ func UploadVideo(link, token string, audio bool) (string, error) {
 	return url, nil
 }
 
+/*
 func copyFile(src, dst string) error {
 	original, err := os.Open(src)
 	if err != nil {
@@ -162,6 +164,7 @@ func copyFile(src, dst string) error {
 
 	return nil
 }
+*/
 
 func UploadFile(fileName, token string, audio bool) (string, error) {
 	client := &http.Client{}
@@ -256,6 +259,9 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 // GetGyfcatLink checks the status of an upload, and returns the url of the webm when encoding is finished
 func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
+	// wait 2 seconds, or else it might not be able to find the gfy and will throw an error
+	time.Sleep(2 * time.Second)
+
 	// create HTTP client and GET request to status endpoint
 	client := &http.Client{}
 

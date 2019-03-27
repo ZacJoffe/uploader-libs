@@ -3,8 +3,8 @@ package main
 import (
 	//"./gfycat"
 	//"./imgur"
-	//"./cmd/gfycat"
-	"./cmd/imgur"
+	"./cmd/gfycat"
+	//"./cmd/imgur"
 	"fmt"
 	"log"
 
@@ -40,46 +40,45 @@ func main() {
 		Secret string
 	}
 
-	/*
-		gfyClient := GfycatClient{
-			ID:     "2_OUazaV",
-			Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
-		}
-
-		token, err := GenerateToken(gfyClient.ID, gfyClient.Secret)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println(token)
-
-		url, err := UploadFile("video.mkv", token, false)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println(url)
-	*/
-
-	imgurClient := ImgurClient{
-		ID:     "0d297558de98a48",
-		Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
+	gfyClient := GfycatClient{
+		ID:     "2_OUazaV",
+		Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
 	}
 
-	url, err := imgur.UploadVideo("video.mkv", imgurClient.ID)
+	token, err := gfycat.GenerateToken(gfyClient.ID, gfyClient.Secret)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(token)
+
+	url, err := gfycat.UploadFile("video.mkv", token, true)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(url)
 
-	link, err := imgur.UploadImage("photo.jpg", imgurClient.ID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	/*
+		imgurClient := ImgurClient{
+			ID:     "0d297558de98a48",
+			Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
+		}
 
-	fmt.Println(link)
+		url, err := imgur.UploadVideo("video.mkv", imgurClient.ID)
+		if err != nil {
+			log.Fatal(err)
+		}
 
+		fmt.Println(url)
+
+		link, err := imgur.UploadImage("photo.jpg", imgurClient.ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(link)
+	*/
 }
 
 func GenerateToken(clientID, clientSecret string) (string, error) {
@@ -339,6 +338,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 // GetGyfcatLink checks the status of an upload, and returns the url of the webm when encoding is finished
 func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
+	time.Sleep(2 * time.Second)
 	// create HTTP client and GET request to status endpoint
 	client := &http.Client{}
 
@@ -350,6 +350,15 @@ func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
 	// add authentication header
 	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
 
+	/*
+		resp, err := client.Do(request)
+		if err != nil {
+			return "", err
+		}
+
+		defer resp.Body.Close()
+	*/
+
 	// create new struct for responce payload, and a new instance of it
 	type responseData struct {
 		Task    string `json:"task"`
@@ -359,6 +368,11 @@ func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
 
 	// the Url field will not be populated during the initial calls when the gfy is encoding, and the task field will not be populated after encoding has finished
 	var data responseData
+
+	/*
+		err = json.NewDecoder(resp.Body).Decode(&data)
+		if err != nil P
+	*/
 
 	// set up flag for loop, and a counter
 	status := "encoding"
@@ -372,6 +386,14 @@ func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {
 		}
 
 		defer resp.Body.Close()
+
+		/*
+			responseBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return "", err
+			}
+			fmt.Println(string(responseBody))
+		*/
 
 		err = json.NewDecoder(resp.Body).Decode(&data)
 		if err != nil {
