@@ -98,7 +98,7 @@ func UploadVideo(link, token string, audio bool) (string, error) {
 		return "", err
 	}
 
-	// create HTTP client, with POST request and appropriate headers
+	// create HTTP client, with POST request to the upload endpoint and appropriate headers
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", body)
@@ -166,7 +166,10 @@ func copyFile(src, dst string) error {
 }
 */
 
+// UploadFile uploads a file to gfycat, and returns the gfylink once it's finished uploading.
+// Note that the sound doesn't work (yet!!!), doesn't matter what you put for that value.
 func UploadFile(fileName, token string, audio bool) (string, error) {
+	// generate gfyname via a body-less POST request to the "upload" endpoint used in UploadVideo function
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", nil)
@@ -174,6 +177,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 		return "", err
 	}
 
+	// Add oauth token via authentication header
 	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
 
 	resp, err := client.Do(request)
@@ -183,6 +187,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	defer resp.Body.Close()
 
+	// encode gfyname into struct
 	type responseData struct {
 		Gfyname string `json:"gfyname"`
 	}
@@ -196,29 +201,31 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	fmt.Println(data.Gfyname)
 
+	// open the given file
 	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
+	// create a new body for upcoming REST call
 	body := new(bytes.Buffer)
+
+	// create a new multipart writer for the form data
 	writer := multipart.NewWriter(body)
 
+	// add key field, with a value of the gfyname
+	// NOTE: this must come first, BEFORE the file
 	err = writer.WriteField("key", data.Gfyname)
 	if err != nil {
 		return "", err
 	}
 
+	// create file field, add the file
 	part, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
 		return "", err
 	}
-
-	/*
-		key, err := writer.CreateFormField("key")
-		key.Write([]byte(data.Gfyname))
-	*/
 
 	io.Copy(part, file)
 
@@ -227,13 +234,12 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 		return "", err
 	}
 
+	// make request
 	request, err = http.NewRequest("POST", "https://filedrop.gfycat.com", body)
 	if err != nil {
 		return "", nil
 	}
 
-	//request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
-	//request.Header.Add("Content-Type", writer.FormDataContentType())
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	resp, err = client.Do(request)
