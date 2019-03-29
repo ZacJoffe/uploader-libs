@@ -32,6 +32,10 @@ func UploadImage(fileName, clientID string) (string, error) {
 
 // uploadFile uploads a file (image or video) to imgur via their api
 func uploadFile(fileName, fileType, clientID string) (string, error) {
+	// check if fileType parameter is valid for use
+	if fileType != "video" && fileType != "image" {
+		return "", fmt.Errorf("Error: invalid fileType")
+	}
 
 	// open the file
 	file, err := os.Open(fileName)
