@@ -10,12 +10,14 @@ import (
 	"os"
 )
 
+// UploadVideo uploads a given video file to imgur
 func UploadVideo(fileName, clientID string) (string, error) {
 	link, err := uploadFile(fileName, "video", clientID)
 	if err != nil {
 		return "", err
 	}
 
+	// remove '.' at the end of the returned link (if it exists)
 	if link[len(link)-1] == '.' {
 		return link[:len(link)-1], nil
 	}
@@ -23,20 +25,26 @@ func UploadVideo(fileName, clientID string) (string, error) {
 	return link, nil
 }
 
+// UploadImage uploads a given image file to imgur
 func UploadImage(fileName, clientID string) (string, error) {
 	return uploadFile(fileName, "image", clientID)
 }
 
+// uploadFile uploads a file (image or video) to imgur via their api
 func uploadFile(fileName, fileType, clientID string) (string, error) {
+
+	// open the file
 	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
+	// create a new body with a multipart form for the form data
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	//part, err := writer.CreateFormFile(fileType, filepath.Base(file.Name()))
+
+	// create a fileType field (image/video), add the file to it
 	part, err := writer.CreateFormFile(fileType, fileName)
 	if err != nil {
 		return "", err
@@ -44,18 +52,12 @@ func uploadFile(fileName, fileType, clientID string) (string, error) {
 
 	io.Copy(part, file)
 
-	/*
-		err = writer.WriteField("file", data.Gfyname)
-		if err != nil {
-			return "", err
-		}
-	*/
-
 	err = writer.Close()
 	if err != nil {
 		return "", err
 	}
 
+	// create new http client, make POST request to upload endpoint
 	client := &http.Client{}
 
 	request, err := http.NewRequest("POST", "https://api.imgur.com/3/upload", body)
@@ -63,6 +65,7 @@ func uploadFile(fileName, fileType, clientID string) (string, error) {
 		return "", err
 	}
 
+	// add auth and content-type headers
 	request.Header.Add("Authorization", fmt.Sprintf("Client-ID %s", clientID))
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -73,6 +76,7 @@ func uploadFile(fileName, fileType, clientID string) (string, error) {
 
 	defer resp.Body.Close()
 
+	// create a new struct for JSON response
 	type responseData struct {
 		Data struct {
 			Error string `json:"error"`
@@ -84,14 +88,17 @@ func uploadFile(fileName, fileType, clientID string) (string, error) {
 
 	var data responseData
 
+	// encode JSON data into new instance of the struct
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return "", err
 	}
 
+	// if unsuccessful, return the http error code and the error message
 	if data.Success == false {
 		return "", fmt.Errorf("%d Error: %s", data.Status, data.Data.Error)
 	}
 
+	// successful request, return the link to the newly uploaded file
 	return data.Data.Link, nil
 }
