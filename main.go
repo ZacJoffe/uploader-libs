@@ -20,6 +20,7 @@ func main() {
 			- put link in clipboard
 	*/
 	//videoLink := "https://www.youtube.com/watch?v=pf5xjw13mqw"
+
 	type GfycatClient struct {
 		ID     string
 		Secret string

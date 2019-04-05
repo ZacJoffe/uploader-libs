@@ -1,2 +1,2 @@
-# gif-uploader
-A Go program to upload youtube videos, gifs, and images to Gfycat and Imgur.
+# Uploader Libraries
+Small Golang libraries for uploading videos, gifs, and images to Gfycat and Imgur.
