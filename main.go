@@ -2,9 +2,7 @@ package main
 
 import (
 	//"./gfycat"
-	//"./imgur"
-	//"./cmd/gfycat"
-	"./cmd/imgur"
+	"./imgur"
 	"fmt"
 	"log"
 )
