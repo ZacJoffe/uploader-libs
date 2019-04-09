@@ -5,6 +5,7 @@ import (
 	"./imgur"
 	"fmt"
 	"log"
+	"os"
 )
 
 func main() {
@@ -50,19 +51,31 @@ func main() {
 		fmt.Println(url)
 	*/
 
+	video, err := os.Open("video.mkv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer video.Close()
+
 	imgurClient := ImgurClient{
 		ID:     "0d297558de98a48",
 		Secret: "1f6721805889e41a47e797d0f026cbb8a2914b45",
 	}
 
-	url, err := imgur.UploadVideo("video.mkv", imgurClient.ID)
+	url, err := imgur.UploadVideo(video, imgurClient.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(url)
 
-	link, err := imgur.UploadImage("photo.jpg", imgurClient.ID)
+	photo, err := os.Open("photo.jpg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer photo.Close()
+
+	link, err := imgur.UploadImage(photo, imgurClient.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
