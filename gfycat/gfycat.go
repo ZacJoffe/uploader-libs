@@ -141,31 +141,106 @@ func UploadVideo(link, token string, audio bool) (string, error) {
 	return url, nil
 }
 
-/*
-func copyFile(src, dst string) error {
-	original, err := os.Open(src)
+// UploadFile uploads a file to gfycat, and returns the gfylink once it's finished uploading.
+// Note that the sound doesn't work (yet!!!), doesn't matter what you put for that value.
+func UploadFile(file *os.File, token string, audio bool) (string, error) {
+	// generate gfyname via a body-less POST request to the "upload" endpoint used in UploadVideo function
+	client := &http.Client{}
+
+	request, err := http.NewRequest("POST", "https://api.gfycat.com/v1/gfycats", nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	defer original.Close()
+	// Add oauth token via authentication header
+	request.Header.Add("Authentication", fmt.Sprintf("Bearer %s", token))
 
-	copy, err := os.Create(dst)
+	resp, err := client.Do(request)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	defer copy.Close()
+	defer resp.Body.Close()
 
-	_, err = io.Copy(copy, original)
-	if err != nil {
-		return err
+	// encode gfyname into struct
+	type responseData struct {
+		Gfyname string `json:"gfyname"`
 	}
 
-	return nil
+	var data responseData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(data.Gfyname)
+
+	/*
+		// open the given file
+		file, err := os.Open(fileName)
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+	*/
+
+	// create a new body for upcoming REST call
+	body := new(bytes.Buffer)
+
+	// create a new multipart writer for the form data
+	writer := multipart.NewWriter(body)
+
+	// add key field, with a value of the gfyname
+	// NOTE: this must come first, BEFORE the file
+	err = writer.WriteField("key", data.Gfyname)
+	if err != nil {
+		return "", err
+	}
+
+	// create file field, add the file
+	part, err := writer.CreateFormFile("file", file.Name())
+	if err != nil {
+		return "", err
+	}
+
+	io.Copy(part, file)
+
+	err = writer.Close()
+	if err != nil {
+		return "", err
+	}
+
+	// make request
+	request, err = http.NewRequest("POST", "https://filedrop.gfycat.com", body)
+	if err != nil {
+		return "", nil
+	}
+
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+
+	resp, err = client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	/*
+		respRaw, _ := ioutil.ReadAll(resp.Body)
+		bodyString := string(respRaw)
+		log.Println(bodyString)
+	*/
+
+	url, err := GetGyfcatLink(data.Gfyname, token, audio)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }
-*/
 
+/*
 // UploadFile uploads a file to gfycat, and returns the gfylink once it's finished uploading.
 // Note that the sound doesn't work (yet!!!), doesn't matter what you put for that value.
 func UploadFile(fileName, token string, audio bool) (string, error) {
@@ -249,12 +324,6 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	defer resp.Body.Close()
 
-	/*
-		respRaw, _ := ioutil.ReadAll(resp.Body)
-		bodyString := string(respRaw)
-		log.Println(bodyString)
-	*/
-
 	url, err := GetGyfcatLink(data.Gfyname, token, audio)
 	if err != nil {
 		return "", err
@@ -262,6 +331,7 @@ func UploadFile(fileName, token string, audio bool) (string, error) {
 
 	return url, nil
 }
+*/
 
 // GetGyfcatLink checks the status of an upload, and returns the url of the webm when encoding is finished
 func GetGyfcatLink(gfyname, token string, audio bool) (string, error) {

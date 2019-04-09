@@ -42,6 +42,7 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 	writer := multipart.NewWriter(body)
 
 	// create a fileType field (image/video), add the file to it
+	fmt.Println(file.Name())
 	part, err := writer.CreateFormFile(fileType, file.Name())
 	if err != nil {
 		return "", err
