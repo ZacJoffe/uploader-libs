@@ -2,6 +2,7 @@ package quad
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -18,6 +19,7 @@ func UploadFile(file *os.File) (string, error) {
 		return "", err
 	}
 
+	//fmt.Println(file.Name())
 	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
 		return "", err
@@ -36,6 +38,8 @@ func UploadFile(file *os.File) (string, error) {
 		return "", err
 	}
 
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
 	resp, err := client.Do(request)
 	if err != nil {
 		return "", err
@@ -43,8 +47,23 @@ func UploadFile(file *os.File) (string, error) {
 
 	defer resp.Body.Close()
 
-	fmt.Println(resp.Body)
+	type quadData struct {
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
+		Errors []struct {
+			Title string `json:"title"`
+		} `json:"errors"`
+	}
 
-	// change
-	return "", nil
+	var data quadData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	// handle errors
+
+	return fmt.Sprintf("https://quad.pe/%s", data.Data.ID), nil
 }

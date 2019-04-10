@@ -1,8 +1,9 @@
 package main
 
 import (
-	"./gfycat"
+	//"./gfycat"
 	//"./imgur"
+	"./quad"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -25,40 +26,54 @@ func main() {
 	*/
 	//videoLink := "https://www.youtube.com/watch?v=pf5xjw13mqw"
 
-	type GfycatClient struct {
-		ID     string
-		Secret string
+	photo, err := os.Open("photo.jpg")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer photo.Close()
 
-	type ImgurClient struct {
-		ID     string
-		Secret string
-	}
-
-	gfyClient := GfycatClient{
-		ID:     "2_OUazaV",
-		Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
-	}
-
-	token, err := gfycat.GenerateToken(gfyClient.ID, gfyClient.Secret)
+	link, err := quad.UploadFile(photo)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(token)
+	fmt.Println(link)
+	/*
+		type GfycatClient struct {
+			ID     string
+			Secret string
+		}
 
-	video, err := os.Open("video.mp4")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer video.Close()
+		type ImgurClient struct {
+			ID     string
+			Secret string
+		}
 
-	url, err := gfycat.UploadFile(video, token, true) // works!
-	if err != nil {
-		log.Fatal(err)
-	}
+		gfyClient := GfycatClient{
+			ID:     "2_OUazaV",
+			Secret: "vheyue5783LEuIOmwc0A2svpgnFp8Hz7_g5uHXPoRjnn8GwLZBxGoskHQrK4PlxM",
+		}
 
-	fmt.Println(url)
+		token, err := gfycat.GenerateToken(gfyClient.ID, gfyClient.Secret)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(token)
+
+		video, err := os.Open("video.mp4")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer video.Close()
+
+		url, err := gfycat.UploadFile(video, token, true) // works!
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(url)
+	*/
 
 	/*
 		imgurClient := ImgurClient{
@@ -94,24 +109,20 @@ func main() {
 	*/
 }
 
-// uploadFile uploads a file (image or video) to imgur via their api
-func uploadFile(file *os.File, fileType, clientID string) (string, error) {
-	// check if fileType parameter is valid for use
-	if fileType != "video" && fileType != "image" {
-		return "", fmt.Errorf("Error: invalid fileType")
-	}
-
-	// create a new body with a multipart form for the form data
+func UploadFile(file *os.File) (string, error) {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	// create a fileType field (image/video), add the file to it
-	fmt.Println(file.Name())
-	part, err := writer.CreateFormFile(fileType, file.Name())
+	err := writer.WriteField("return_json", "true")
 	if err != nil {
 		return "", err
 	}
 
+	fmt.Println(file.Name())
+	part, err := writer.CreateFormFile("image", file.Name())
+	if err != nil {
+		return "", err
+	}
 	io.Copy(part, file)
 
 	err = writer.Close()
@@ -119,16 +130,13 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 		return "", err
 	}
 
-	// create new http client, make POST request to upload endpoint
 	client := &http.Client{}
 
-	request, err := http.NewRequest("POST", "https://api.imgur.com/3/upload", body)
+	request, err := http.NewRequest("POST", "https://quad.pe/api/upload", body)
 	if err != nil {
 		return "", err
 	}
 
-	// add auth and content-type headers
-	request.Header.Add("Authorization", fmt.Sprintf("Client-ID %s", clientID))
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := client.Do(request)
@@ -138,29 +146,23 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 
 	defer resp.Body.Close()
 
-	// create a new struct for JSON response
-	type responseData struct {
+	type quadData struct {
 		Data struct {
-			Error string `json:"error"`
-			Link  string `json:"link"`
+			ID string `json:"id"`
 		} `json:"data"`
-		Success bool `json:"success"`
-		Status  int  `json:"status"`
+		Errors []struct {
+			Title string `json:"title"`
+		} `json:"errors"`
 	}
 
-	var data responseData
+	var data quadData
 
-	// encode JSON data into new instance of the struct
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return "", err
 	}
 
-	// if unsuccessful, return the http error code and the error message
-	if data.Success == false {
-		return "", fmt.Errorf("%d Error: %s", data.Status, data.Data.Error)
-	}
+	// handle errors
 
-	// successful request, return the link to the newly uploaded file
-	return data.Data.Link, nil
+	return fmt.Sprintf("https://quad.pe/%s", data.Data.ID), nil
 }
