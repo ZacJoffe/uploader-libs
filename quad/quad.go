@@ -52,7 +52,7 @@ func UploadFile(file *os.File) (string, error) {
 			ID string `json:"id"`
 		} `json:"data"`
 		Errors []struct {
-			Title string `json:"title"`
+			Description string `json:"title"`
 		} `json:"errors"`
 	}
 
@@ -61,6 +61,10 @@ func UploadFile(file *os.File) (string, error) {
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return "", err
+	}
+
+	if len(data.Errors) != 0 {
+		return "", fmt.Errorf("Error: %s", data.Errors[0].Description)
 	}
 
 	// handle errors
