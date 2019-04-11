@@ -42,14 +42,14 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 	writer := multipart.NewWriter(body)
 
 	// create a fileType field (image/video), add the file to it
-	fmt.Println(file.Name())
+	//fmt.Println(file.Name())
 	part, err := writer.CreateFormFile(fileType, file.Name())
 	if err != nil {
 		return "", err
 	}
-
 	io.Copy(part, file)
 
+	// close writer explicitly instead of with defer to properly create form
 	err = writer.Close()
 	if err != nil {
 		return "", err
@@ -86,7 +86,7 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 
 	var data responseData
 
-	// encode JSON data into new instance of the struct
+	// decode JSON response data into new instance of the struct
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return "", err
