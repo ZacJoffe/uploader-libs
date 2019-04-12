@@ -94,6 +94,14 @@ func UploadFile(file *os.File) (string, error) {
 }
 
 func NewGallery(galleryName string) (string, error) {
+	return gallery(galleryName, []string{})
+}
+
+func GallaryAddPhotos(galleryName string, images []string) (string, error) {
+	return gallery(galleryName, images)
+}
+
+func gallery(galleryName string, images []string) (string, error) {
 	type Attributes struct {
 		Gallery string   `json:"gallery"`
 		Images  []string `json:"images"`
@@ -122,7 +130,7 @@ func NewGallery(galleryName string) (string, error) {
 			Type: "gallery",
 			Attributes: Attributes{
 				Gallery: fmt.Sprintf("%s!%s", galleryName, "adawda"), // TODO: generate password
-				Images:  []string{},
+				Images:  images,
 			},
 		},
 	}

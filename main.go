@@ -26,6 +26,13 @@ func main() {
 	*/
 	//videoLink := "https://www.youtube.com/watch?v=pf5xjw13mqw"
 
+	link, err := quad.NewGallery("testttt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(link)
+
 	photo, err := os.Open("photo.jpg")
 	if err != nil {
 		log.Fatal(err)
