@@ -26,12 +26,14 @@ func main() {
 	*/
 	//videoLink := "https://www.youtube.com/watch?v=pf5xjw13mqw"
 
-	link, err := quad.NewGallery("testttt")
+	link, err := quad.NewGallery("test")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(link)
+
+	var images []*os.File
 
 	photo, err := os.Open("photo.jpg")
 	if err != nil {
@@ -39,7 +41,9 @@ func main() {
 	}
 	defer photo.Close()
 
-	link, err := quad.UploadFile(photo)
+	images = append(images, photo)
+
+	link, err = quad.GallaryAddImages("test", images)
 	if err != nil {
 		log.Fatal(err)
 	}

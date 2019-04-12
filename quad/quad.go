@@ -21,6 +21,15 @@ type quadData struct {
 
 // UploadFile uploads a given image file to quad.pe, returns the link to the image
 func UploadFile(file *os.File) (string, error) {
+	imageID, err := upload(file)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("https://quad.pe/%s", imageID), nil
+}
+
+func upload(file *os.File) (string, error) {
 	// create a new body with a multipart form for the form data
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -89,15 +98,26 @@ func UploadFile(file *os.File) (string, error) {
 		return "", fmt.Errorf("Error: %s", data.Errors[0].Description)
 	}
 
-	// return a link with the ID
-	return fmt.Sprintf("https://quad.pe/%s", data.Data.ID), nil
+	// return image ID
+	return data.Data.ID, nil
 }
 
 func NewGallery(galleryName string) (string, error) {
 	return gallery(galleryName, []string{})
 }
 
-func GallaryAddPhotos(galleryName string, images []string) (string, error) {
+func GallaryAddImages(galleryName string, files []*os.File) (string, error) {
+	var images []string
+
+	for _, file := range files {
+		imageID, err := upload(file)
+		if err != nil {
+			return "", err
+		}
+
+		images = append(images, imageID)
+	}
+
 	return gallery(galleryName, images)
 }
 
