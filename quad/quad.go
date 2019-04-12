@@ -10,6 +10,15 @@ import (
 	"os"
 )
 
+type quadData struct {
+	Data struct {
+		ID string `json:"id"`
+	} `json:"data"`
+	Errors []struct { // only will return one error, but is given as array
+		Description string `json:"title"`
+	} `json:"errors"`
+}
+
 // UploadFile uploads a given image file to quad.pe, returns the link to the image
 func UploadFile(file *os.File) (string, error) {
 	// create a new body with a multipart form for the form data
@@ -53,15 +62,17 @@ func UploadFile(file *os.File) (string, error) {
 
 	defer resp.Body.Close()
 
-	// create a new struct for JSON response
-	type quadData struct {
-		Data struct {
-			ID string `json:"id"`
-		} `json:"data"`
-		Errors []struct { // only will return one error, but is given as array
-			Description string `json:"title"`
-		} `json:"errors"`
-	}
+	/*
+		// create a new struct for JSON response
+		type quadData struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+			Errors []struct { // only will return one error, but is given as array
+				Description string `json:"title"`
+			} `json:"errors"`
+		}
+	*/
 
 	var data quadData
 
@@ -80,4 +91,70 @@ func UploadFile(file *os.File) (string, error) {
 
 	// return a link with the ID
 	return fmt.Sprintf("https://quad.pe/%s", data.Data.ID), nil
+}
+
+func NewGallery(galleryName string) (string, error) {
+	type Attributes struct {
+		Gallery string   `json:"gallery"`
+		Images  []string `json:"images"`
+	}
+
+	type Data struct {
+		Type       string     `json:"type"`
+		Attributes Attributes `json:"attributes"`
+	}
+
+	type requestPayload struct {
+		Data Data `json:"data"`
+		/*
+			Data struct {
+				Type       string `json:"type"`
+				Attributes struct {
+					Gallery string   `json:"gallery"`
+					Images  []string `json:"images"`
+				} `json:"attributes"`
+			} `json:"data"`
+		*/
+	}
+
+	payload := requestPayload{
+		Data: Data{
+			Type: "gallery",
+			Attributes: Attributes{
+				Gallery: fmt.Sprintf("%s!%s", galleryName, "adawda"), // TODO: generate password
+				Images:  []string{},
+			},
+		},
+	}
+
+	body := new(bytes.Buffer)
+	err := json.NewEncoder(body).Encode(&payload)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+
+	request, err := http.NewRequest("PUT", "https://quad.pe/api/gallery", body)
+	if err != nil {
+		return "", err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	var responseData quadData
+
+	err = json.NewDecoder(resp.Body).Decode(&responseData)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("https://quad.pe/gallery/#%s", responseData.Data.ID), nil
 }
