@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
 )
 
 type quadData struct {
@@ -17,6 +19,15 @@ type quadData struct {
 	Errors []struct { // only will return one error, but is given as array
 		Description string `json:"title"`
 	} `json:"errors"`
+}
+
+func generateRandomPassword(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	bytes := make([]byte, length)
+	for i := 0; i < length; i++ {
+		bytes[i] = byte(65 + rand.Intn(25))
+	}
+	return string(bytes)
 }
 
 // UploadFile uploads a given image file to quad.pe, returns the link to the image
@@ -106,7 +117,18 @@ func NewGallery(galleryName string) (string, error) {
 	return gallery(galleryName, []string{})
 }
 
-func GallaryAddImages(galleryName string, files []*os.File) (string, error) {
+func GalleryAddImage(galleryName string, file *os.File) (string, error) {
+	imageID, err := upload(file)
+	if err != nil {
+		return "", err
+	}
+
+	image := []string{imageID}
+
+	return gallery(galleryName, image)
+}
+
+func GalleryAddImages(galleryName string, files []*os.File) (string, error) {
 	var images []string
 
 	for _, file := range files {
@@ -116,6 +138,7 @@ func GallaryAddImages(galleryName string, files []*os.File) (string, error) {
 		}
 
 		images = append(images, imageID)
+		//time.Sleep(1 * time.Second)
 	}
 
 	return gallery(galleryName, images)
@@ -145,11 +168,13 @@ func gallery(galleryName string, images []string) (string, error) {
 		*/
 	}
 
+	password := generateRandomPassword(10)
+	fmt.Println(password)
 	payload := requestPayload{
 		Data: Data{
 			Type: "gallery",
 			Attributes: Attributes{
-				Gallery: fmt.Sprintf("%s!%s", galleryName, "adawda"), // TODO: generate password
+				Gallery: fmt.Sprintf("%s!%s", galleryName, password), // TODO: generate password
 				Images:  images,
 			},
 		},
