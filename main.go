@@ -54,7 +54,7 @@ func main() {
 
 	images = append(images, photo)
 
-	link, err := quad.GalleryAddImages(galleryName, images)
+	link, err := quad.UploadImages(images, galleryName)
 	if err != nil {
 		log.Fatal(err)
 	}
