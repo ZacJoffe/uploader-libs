@@ -101,6 +101,65 @@ func uploadFile(file *os.File, fileType, clientID string) (string, error) {
 	return data.Data.Link, nil
 }
 
+func UploadImages(files []*os.Files, clientID string) (string, error) {
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+
+	for _, file := range files {
+		// upload file, get delete hash
+		deleteHash := "test"
+		err := writer.WriteField("deletehashes[]", deleteHash)
+		if err != nil {
+			return "", nil
+		}
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+
+	request, err := http.NewRequest("POST", "https://api.imgur.com/3/album", body)
+	if err != nil {
+		return "", err
+	}
+
+	// add auth and content-type headers
+	request.Header.Add("Authorization", fmt.Sprintf("Client-ID %s", clientID))
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	type responseData struct {
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
+		Success bool `json:"success"`
+		Status  int  `json:"status"`
+	}
+
+	var data responseData
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	// if unsuccessful, return the http error code and the error message
+	if data.Success == false {
+		return "", fmt.Errorf("%d Error: %s", data.Status, data.Data.Error)
+	}
+
+	return fmt.Sprintf("https://imgur.com/a/%s", data.Data.ID), nil
+}
+
 /*
 // uploadFile uploads a file (image or video) to imgur via their api
 func uploadFile(fileName, fileType, clientID string) (string, error) {
